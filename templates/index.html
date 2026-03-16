@@ -47,6 +47,7 @@
             box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
             max-width: 650px;
             width: 100%;
+            transition: max-width 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
         }
 
         h1 {
@@ -326,10 +327,14 @@
         <h1>HW1-1: Grid Map App</h1>
 
         <div class="controls">
-            <label for="gridSize">Grid Dimension (5-9):</label>
-            <input type="number" id="gridSize" min="5" max="9" value="5">
+            <label for="gridSize">Grid Dimension (3-9):</label>
+            <input type="number" id="gridSize" min="3" max="9" value="5">
             <button class="btn" onclick="generateGrid()">Generate Square</button>
             <button class="btn btn-outline" onclick="resetGrid()">Reset Tiles</button>
+            <button class="btn" style="background-color: #8b5cf6;" onclick="evaluatePolicy()">Random Policy
+                Eval</button>
+            <button class="btn" style="background-color: #ec4899;" onclick="runValueIteration()">Value
+                Iteration</button>
         </div>
 
         <div class="header-content">
@@ -357,6 +362,30 @@
 
         <div class="grid-wrapper">
             <div class="grid" id="gridContainer"></div>
+        </div>
+
+        <!-- Phase 1-2 Display -->
+        <div id="resultsArea"
+            style="display: none; margin-top: 30px; padding-top: 24px; border-top: 1px solid rgba(255,255,255,0.1); width: 100%;">
+            <h2 id="resultsTitle" style="font-size: 1.4rem; text-align: center; margin-bottom: 20px; color: #a78bfa;">
+                Evaluation Results
+                (Policy & Value Matrix)</h2>
+            <div style="display: flex; gap: 20px; flex-wrap: wrap; justify-content: center; width: 100%;">
+                <div
+                    style="flex: 1; min-width: 250px; background: rgba(0,0,0,0.2); padding: 15px; border-radius: 12px; border: 1px solid rgba(255, 255, 255, 0.03);">
+                    <h3
+                        style="text-align: center; margin-top: 0; color: var(--text-muted); font-size: 1.1rem; margin-bottom: 12px;">
+                        Value Matrix</h3>
+                    <div class="grid" id="valueGridContainer" style="justify-content: center;"></div>
+                </div>
+                <div
+                    style="flex: 1; min-width: 250px; background: rgba(0,0,0,0.2); padding: 15px; border-radius: 12px; border: 1px solid rgba(255, 255, 255, 0.03);">
+                    <h3
+                        style="text-align: center; margin-top: 0; color: var(--text-muted); font-size: 1.1rem; margin-bottom: 12px;">
+                        Policy Matrix</h3>
+                    <div class="grid" id="policyGridContainer" style="justify-content: center;"></div>
+                </div>
+            </div>
         </div>
     </div>
 
@@ -408,12 +437,19 @@
         }
 
         function generateGrid() {
+            // Reset evaluation view if it's open
+            const resultsArea = document.getElementById('resultsArea');
+            if (resultsArea) {
+                resultsArea.style.display = 'none';
+                document.querySelector('.container').style.maxWidth = '650px';
+            }
+
             const sizeInput = document.getElementById('gridSize').value;
             let n = parseInt(sizeInput);
 
-            if (isNaN(n) || n < 5 || n > 9) {
-                showToast("Please enter a valid dimension between 5 and 9.");
-                n = Math.max(5, Math.min(9, isNaN(n) ? 5 : n));
+            if (isNaN(n) || n < 3 || n > 9) {
+                showToast("Please enter a valid dimension between 3 and 9.");
+                n = Math.max(3, Math.min(9, isNaN(n) ? 5 : n));
                 document.getElementById('gridSize').value = n;
             }
 
@@ -494,6 +530,164 @@
                 playPopAnimation(cell);
             } else {
                 showToast(`Limit reached: Maximum ${maxObstacles} obstacles for ${currentN}x${currentN}.`);
+            }
+        }
+
+        function evaluatePolicy() {
+            if (!endSet) {
+                showToast("Please set an end point (red cell) first.");
+                return;
+            }
+
+            const cells = document.querySelectorAll('#gridContainer .cell');
+            let start = -1;
+            let end = -1;
+            let obstacles = [];
+
+            cells.forEach((cell, index) => {
+                if (cell.classList.contains('start')) start = index;
+                if (cell.classList.contains('end')) end = index;
+                if (cell.classList.contains('obstacle')) obstacles.push(index);
+            });
+
+            const evalBtn = document.querySelector('button[onclick="evaluatePolicy()"]');
+            const originalText = evalBtn.innerText;
+            evalBtn.innerText = "Evaluating...";
+            evalBtn.disabled = true;
+
+            fetch('/evaluate', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    n: currentN,
+                    start: start,
+                    end: end,
+                    obstacles: obstacles
+                })
+            })
+                .then(res => res.json())
+                .then(data => {
+                    evalBtn.innerText = originalText;
+                    evalBtn.disabled = false;
+                    document.getElementById('resultsTitle').innerText = "Random Policy Evaluation Results";
+                    document.getElementById('resultsTitle').style.color = "#8b5cf6";
+                    renderMatrices(data.values, data.policy);
+                    setTimeout(() => {
+                        document.getElementById('resultsArea').scrollIntoView({ behavior: 'smooth', block: 'end' });
+                    }, 100);
+                })
+                .catch(err => {
+                    console.error(err);
+                    showToast("Evaluation failed. See console.");
+                    evalBtn.innerText = originalText;
+                    evalBtn.disabled = false;
+                });
+        }
+
+        function runValueIteration() {
+            if (!endSet) {
+                showToast("Please set an end point (red cell) first.");
+                return;
+            }
+
+            const cells = document.querySelectorAll('#gridContainer .cell');
+            let start = -1;
+            let end = -1;
+            let obstacles = [];
+
+            cells.forEach((cell, index) => {
+                if (cell.classList.contains('start')) start = index;
+                if (cell.classList.contains('end')) end = index;
+                if (cell.classList.contains('obstacle')) obstacles.push(index);
+            });
+
+            const valBtn = document.querySelector('button[onclick="runValueIteration()"]');
+            const originalText = valBtn.innerText;
+            valBtn.innerText = "Computing...";
+            valBtn.disabled = true;
+
+            fetch('/value_iteration', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    n: currentN,
+                    start: start,
+                    end: end,
+                    obstacles: obstacles
+                })
+            })
+                .then(res => res.json())
+                .then(data => {
+                    valBtn.innerText = originalText;
+                    valBtn.disabled = false;
+                    document.getElementById('resultsTitle').innerText = "Optimal Policy (Value Iteration Results)";
+                    document.getElementById('resultsTitle').style.color = "#ec4899"; // Pink for VI
+                    renderMatrices(data.values, data.policy, data.path);
+                    setTimeout(() => {
+                        document.getElementById('resultsArea').scrollIntoView({ behavior: 'smooth', block: 'end' });
+                    }, 100);
+                })
+                .catch(err => {
+                    console.error(err);
+                    showToast("Value Iteration failed. See console.");
+                    valBtn.innerText = originalText;
+                    valBtn.disabled = false;
+                });
+        }
+
+        function renderMatrices(values, policy, opPath = []) {
+            document.querySelector('.container').style.maxWidth = '1050px';
+            const resultsArea = document.getElementById('resultsArea');
+            resultsArea.style.display = 'block';
+
+            const valueGrid = document.getElementById('valueGridContainer');
+            const policyGrid = document.getElementById('policyGridContainer');
+
+            // Smaller cells (40px) to ensure matrices fit well side by side
+            valueGrid.style.gridTemplateColumns = `repeat(${currentN}, 40px)`;
+            policyGrid.style.gridTemplateColumns = `repeat(${currentN}, 40px)`;
+
+            valueGrid.innerHTML = '';
+            policyGrid.innerHTML = '';
+
+            const cells = document.querySelectorAll('#gridContainer .cell');
+
+            for (let i = 0; i < currentN * currentN; i++) {
+                // Shared cell creation logic
+                function createDisplayCell(parentGrid, content, isValue, isActivePath = false) {
+                    const c = document.createElement('div');
+                    c.className = cells[i].className;
+                    c.style.animation = 'none'; // remove bouncing animation
+                    c.style.width = '40px';
+                    c.style.height = '40px';
+                    c.style.transform = 'none'; // disable hover transform popping
+                    c.style.boxShadow = 'none';
+                    // Smaller font sizes for tighter grid
+                    c.style.fontSize = isValue ? '0.75rem' : '1.2rem';
+                    c.style.cursor = 'default';
+
+                    if (cells[i].classList.contains('obstacle')) {
+                        c.innerText = '';
+                    } else if (cells[i].classList.contains('end')) {
+                        c.innerText = isValue ? '0' : '★';
+                    } else {
+                        c.innerText = content;
+                    }
+
+                    // Highlight optimal path cells
+                    if (!isValue && isActivePath && !cells[i].classList.contains('start') && !cells[i].classList.contains('end')) {
+                        c.style.backgroundColor = 'rgba(236, 72, 153, 0.4)'; // Pink tint for path
+                        c.style.borderColor = '#ec4899';
+                        c.style.color = 'white';
+                        c.style.boxShadow = 'inset 0 0 8px rgba(236, 72, 153, 0.5)';
+                    }
+
+                    parentGrid.appendChild(c);
+                }
+
+                const isPathNode = opPath.includes(i);
+                createDisplayCell(valueGrid, values[i], true, false);
+                createDisplayCell(policyGrid, policy[i], false, isPathNode);
             }
         }
 
