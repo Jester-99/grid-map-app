@@ -216,8 +216,8 @@ def value_iteration():
             
             if curr == end:
                 path_nodes.update(curr_path)
-                # 將 0-indexed 的格子編號轉成 1-indexed 以便印給使用者看
-                all_paths_display.append([s + 1 for s in curr_path])
+                # 將格子編號轉成 (row, col) 座標格式
+                all_paths_display.append([f"({s // n},{s % n})" for s in curr_path])
                 continue
                 
             for a in policy[curr]:

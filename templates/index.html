@@ -482,7 +482,8 @@
                 for (let j = 0; j < n; j++) {
                     const cell = document.createElement('div');
                     cell.classList.add('cell');
-                    cell.innerText = cellNumber;
+                    cell.innerText = `(${i},${j})`;
+                    cell.style.fontSize = '0.8rem'; // make coordinate fit the box
                     cell.dataset.number = cellNumber;
 
                     // Add staggered animation delay for initial render
