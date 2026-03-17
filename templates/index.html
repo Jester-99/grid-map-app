@@ -466,7 +466,7 @@
             const gridContainer = document.getElementById('gridContainer');
             gridContainer.innerHTML = '';
 
-            gridContainer.style.gridTemplateColumns = `repeat(${n}, 50px)`;
+            gridContainer.style.gridTemplateColumns = `24px repeat(${n}, 50px)`;
 
             document.getElementById('gridTitle').innerText = `${n} x ${n} Square:`;
 
@@ -478,20 +478,44 @@
             updateStatus();
 
             let cellNumber = 1;
-            for (let i = 0; i < n; i++) {
-                for (let j = 0; j < n; j++) {
-                    const cell = document.createElement('div');
-                    cell.classList.add('cell');
-                    cell.innerText = `(${i},${j})`;
-                    cell.style.fontSize = '0.8rem'; // make coordinate fit the box
-                    cell.dataset.number = cellNumber;
+            for (let i = -1; i < n; i++) {
+                for (let j = -1; j < n; j++) {
+                    if (i === -1 && j === -1) {
+                        const empty = document.createElement('div');
+                        gridContainer.appendChild(empty);
+                    } else if (i === -1) {
+                        const label = document.createElement('div');
+                        label.style.display = 'flex';
+                        label.style.alignItems = 'flex-end';
+                        label.style.justifyContent = 'center';
+                        label.style.color = 'var(--text-muted)';
+                        label.style.fontWeight = 'bold';
+                        label.style.paddingBottom = '5px';
+                        label.innerText = j;
+                        gridContainer.appendChild(label);
+                    } else if (j === -1) {
+                        const label = document.createElement('div');
+                        label.style.display = 'flex';
+                        label.style.alignItems = 'center';
+                        label.style.justifyContent = 'flex-end';
+                        label.style.color = 'var(--text-muted)';
+                        label.style.fontWeight = 'bold';
+                        label.style.paddingRight = '8px';
+                        label.innerText = i;
+                        gridContainer.appendChild(label);
+                    } else {
+                        const cell = document.createElement('div');
+                        cell.classList.add('cell');
+                        cell.innerText = "";
+                        cell.dataset.number = cellNumber;
 
-                    // Add staggered animation delay for initial render
-                    cell.style.animation = `fadeIn 0.4s ease backwards ${(i + j) * 0.04}s`;
+                        // Add staggered animation delay for initial render
+                        cell.style.animation = `fadeIn 0.4s ease backwards ${(i + j) * 0.04}s`;
 
-                    cell.onclick = () => handleCellClick(cell);
-                    gridContainer.appendChild(cell);
-                    cellNumber++;
+                        cell.onclick = () => handleCellClick(cell);
+                        gridContainer.appendChild(cell);
+                        cellNumber++;
+                    }
                 }
             }
         }
@@ -674,50 +698,73 @@
             }
 
             // Smaller cells (40px) to ensure matrices fit well side by side
-            valueGrid.style.gridTemplateColumns = `repeat(${currentN}, 40px)`;
-            policyGrid.style.gridTemplateColumns = `repeat(${currentN}, 40px)`;
+            valueGrid.style.gridTemplateColumns = `24px repeat(${currentN}, 40px)`;
+            policyGrid.style.gridTemplateColumns = `24px repeat(${currentN}, 40px)`;
 
             valueGrid.innerHTML = '';
             policyGrid.innerHTML = '';
 
             const cells = document.querySelectorAll('#gridContainer .cell');
 
-            for (let i = 0; i < currentN * currentN; i++) {
-                // Shared cell creation logic
-                function createDisplayCell(parentGrid, content, isValue, isActivePath = false) {
-                    const c = document.createElement('div');
-                    c.className = cells[i].className;
-                    c.style.animation = 'none'; // remove bouncing animation
-                    c.style.width = '40px';
-                    c.style.height = '40px';
-                    c.style.transform = 'none'; // disable hover transform popping
-                    c.style.boxShadow = 'none';
-                    // Smaller font sizes for tighter grid
-                    c.style.fontSize = isValue ? '0.75rem' : '1.2rem';
-                    c.style.cursor = 'default';
-
-                    if (cells[i].classList.contains('obstacle')) {
-                        c.innerText = '';
-                    } else if (cells[i].classList.contains('end')) {
-                        c.innerText = isValue ? '0' : '★';
+            for (let i = -1; i < currentN; i++) {
+                for (let j = -1; j < currentN; j++) {
+                    if (i === -1 && j === -1) {
+                        valueGrid.appendChild(document.createElement('div'));
+                        policyGrid.appendChild(document.createElement('div'));
+                    } else if (i === -1) {
+                        const lbl1 = document.createElement('div');
+                        lbl1.style.cssText = 'display:flex;align-items:flex-end;justify-content:center;color:var(--text-muted);font-weight:bold;font-size:0.85rem;padding-bottom:5px;';
+                        lbl1.innerText = j;
+                        const lbl2 = lbl1.cloneNode(true);
+                        valueGrid.appendChild(lbl1);
+                        policyGrid.appendChild(lbl2);
+                    } else if (j === -1) {
+                        const lbl1 = document.createElement('div');
+                        lbl1.style.cssText = 'display:flex;align-items:center;justify-content:flex-end;color:var(--text-muted);font-weight:bold;font-size:0.85rem;padding-right:8px;';
+                        lbl1.innerText = i;
+                        const lbl2 = lbl1.cloneNode(true);
+                        valueGrid.appendChild(lbl1);
+                        policyGrid.appendChild(lbl2);
                     } else {
-                        c.innerText = content;
-                    }
+                        let cellIdx = i * currentN + j;
 
-                    // Highlight optimal path cells
-                    if (!isValue && isActivePath && !cells[i].classList.contains('start') && !cells[i].classList.contains('end')) {
-                        c.style.backgroundColor = 'rgba(236, 72, 153, 0.4)'; // Pink tint for path
-                        c.style.borderColor = '#ec4899';
-                        c.style.color = 'white';
-                        c.style.boxShadow = 'inset 0 0 8px rgba(236, 72, 153, 0.5)';
-                    }
+                        // Shared cell creation logic
+                        function createDisplayCell(parentGrid, content, isValue, isActivePath = false) {
+                            const c = document.createElement('div');
+                            c.className = cells[cellIdx].className;
+                            c.style.animation = 'none'; // remove bouncing animation
+                            c.style.width = '40px';
+                            c.style.height = '40px';
+                            c.style.transform = 'none'; // disable hover transform popping
+                            c.style.boxShadow = 'none';
+                            // Smaller font sizes for tighter grid
+                            c.style.fontSize = isValue ? '0.75rem' : '1.2rem';
+                            c.style.cursor = 'default';
 
-                    parentGrid.appendChild(c);
+                            if (cells[cellIdx].classList.contains('obstacle')) {
+                                c.innerText = '';
+                            } else if (cells[cellIdx].classList.contains('end')) {
+                                c.innerText = isValue ? '0' : '★';
+                            } else {
+                                c.innerText = content;
+                            }
+
+                            // Highlight optimal path cells
+                            if (!isValue && isActivePath && !cells[cellIdx].classList.contains('start') && !cells[cellIdx].classList.contains('end')) {
+                                c.style.backgroundColor = 'rgba(236, 72, 153, 0.4)'; // Pink tint for path
+                                c.style.borderColor = '#ec4899';
+                                c.style.color = 'white';
+                                c.style.boxShadow = 'inset 0 0 8px rgba(236, 72, 153, 0.5)';
+                            }
+
+                            parentGrid.appendChild(c);
+                        }
+
+                        const isPathNode = opPath.includes(cellIdx);
+                        createDisplayCell(valueGrid, values[cellIdx], true, false);
+                        createDisplayCell(policyGrid, policy[cellIdx], false, isPathNode);
+                    }
                 }
-
-                const isPathNode = opPath.includes(i);
-                createDisplayCell(valueGrid, values[i], true, false);
-                createDisplayCell(policyGrid, policy[i], false, isPathNode);
             }
         }
 
