@@ -177,21 +177,21 @@ def value_iteration():
             
     # === 提取最佳策略 (Extract Optimal Policy) ===
     # 講義公式: \pi(s) = argmax_a \sum p(s', r|s, a)[r + \gamma V(s')]
-    policy = np.zeros(n * n, dtype=int)
+    policy = [[] for _ in range(n * n)]
     for s in range(n * n):
         if s in terminals or s in obs_set:
             continue
             
-        best_a = 0
         max_val = -float('inf')
         for a in range(4):
             ns, reward = get_next_state_reward(s, a)
             val = reward + gamma * V[ns]
-            # 找出最大價值對應的動作
-            if val > max_val:
+            # 找出最大價值對應的動作 (使用 1e-6 處理浮點數誤差)
+            if val > max_val + 1e-6:
                 max_val = val
-                best_a = a
-        policy[s] = best_a
+                policy[s] = [a]
+            elif abs(val - max_val) <= 1e-6:
+                policy[s].append(a)
         
     policy_display = []
     for s in range(n * n):
@@ -200,33 +200,39 @@ def value_iteration():
         elif s in terminals:
             policy_display.append('★')
         else:
-            policy_display.append(arrows[policy[s]])
+            # 將格子上所有最佳方向轉為箭頭符號組合
+            cell_arrows = "".join([arrows[a] for a in policy[s]])
+            policy_display.append(cell_arrows)
             
-    # === 找出最佳路徑 (Trace Optimal Path) ===
-    path = []
+    # === 找出所有最佳/最小路徑 (Trace All Optimal Paths) ===
+    path_nodes = set()
+    all_paths_display = []
     if start != -1 and end != -1:
-        curr = start
-        visited = set()
-        # 避免遇到無法抵達終點的無窮迴圈
-        while curr != end and curr not in visited:
-            path.append(curr)
-            visited.add(curr)
+        # 使用 BFS 找出所有能到達終點的最佳路徑，記錄所有經過的節點與完整路線
+        paths = [[start]]
+        while paths:
+            curr_path = paths.pop(0)
+            curr = curr_path[-1]
             
-            a = policy[curr]
-            ns, _ = get_next_state_reward(curr, a)
-            
-            # 如果撞牆或撞障礙物停在原地，代表沒有路徑可以到達終點
-            if ns == curr:
-                break
-            curr = ns
-            
-        if curr == end:
-            path.append(end)
+            if curr == end:
+                path_nodes.update(curr_path)
+                # 將 0-indexed 的格子編號轉成 1-indexed 以便印給使用者看
+                all_paths_display.append([s + 1 for s in curr_path])
+                continue
+                
+            for a in policy[curr]:
+                ns, _ = get_next_state_reward(curr, a)
+                # 避免無窮迴圈或撞牆
+                if ns != curr and ns not in curr_path:
+                    paths.append(curr_path + [ns])
+                    
+    path = list(path_nodes)
 
     return jsonify({
         'values': np.round(V, 2).tolist(),
         'policy': policy_display,
-        'path': path
+        'path': path,
+        'all_paths': all_paths_display
     })
 
 if __name__ == '__main__':

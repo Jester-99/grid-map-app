@@ -386,6 +386,15 @@
                     <div class="grid" id="policyGridContainer" style="justify-content: center;"></div>
                 </div>
             </div>
+
+            <div id="pathListContainer"
+                style="display: none; margin-top: 24px; padding: 15px; border-radius: 12px; background: rgba(0,0,0,0.2); border: 1px solid rgba(255, 255, 255, 0.03); max-width: 800px; margin-left: auto; margin-right: auto;">
+                <h3 style="text-align: center; margin-top: 0; color: #ec4899; font-size: 1.1rem; margin-bottom: 12px;">
+                    All Minimum Optimal Paths</h3>
+                <div id="pathList"
+                    style="display: flex; flex-direction: column; gap: 8px; max-height: 150px; overflow-y: auto; padding-right: 5px;">
+                </div>
+            </div>
         </div>
     </div>
 
@@ -622,7 +631,7 @@
                     valBtn.disabled = false;
                     document.getElementById('resultsTitle').innerText = "Optimal Policy (Value Iteration Results)";
                     document.getElementById('resultsTitle').style.color = "#ec4899"; // Pink for VI
-                    renderMatrices(data.values, data.policy, data.path);
+                    renderMatrices(data.values, data.policy, data.path, data.all_paths);
                     setTimeout(() => {
                         document.getElementById('resultsArea').scrollIntoView({ behavior: 'smooth', block: 'end' });
                     }, 100);
@@ -635,13 +644,33 @@
                 });
         }
 
-        function renderMatrices(values, policy, opPath = []) {
+        function renderMatrices(values, policy, opPath = [], allPaths = []) {
             document.querySelector('.container').style.maxWidth = '1050px';
             const resultsArea = document.getElementById('resultsArea');
             resultsArea.style.display = 'block';
 
             const valueGrid = document.getElementById('valueGridContainer');
             const policyGrid = document.getElementById('policyGridContainer');
+            const pathListContainer = document.getElementById('pathListContainer');
+            const pathList = document.getElementById('pathList');
+
+            if (allPaths && allPaths.length > 0) {
+                pathListContainer.style.display = 'block';
+                pathList.innerHTML = '';
+                allPaths.forEach((p, idx) => {
+                    const row = document.createElement('div');
+                    row.style.background = 'rgba(236, 72, 153, 0.1)';
+                    row.style.border = '1px solid rgba(236, 72, 153, 0.3)';
+                    row.style.padding = '8px 12px';
+                    row.style.borderRadius = '8px';
+                    row.style.fontSize = '0.9rem';
+                    row.style.color = '#f8fafc';
+                    row.innerHTML = `<strong style="color: #ec4899;">Path ${idx + 1}:</strong> ${p.join(' &rarr; ')}`;
+                    pathList.appendChild(row);
+                });
+            } else {
+                pathListContainer.style.display = 'none';
+            }
 
             // Smaller cells (40px) to ensure matrices fit well side by side
             valueGrid.style.gridTemplateColumns = `repeat(${currentN}, 40px)`;
