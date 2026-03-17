@@ -2,6 +2,20 @@
 
 這是一個基於 Flask 構建的網頁應用程式，用來視覺化與實作強化學習（Reinforcement Learning）中的**馬可夫決策過程（MDP）**。專案包含了網格地圖的建立、隨機策略評估（Policy Evaluation），以及最佳解疊代（Value Iteration）。
 
+## 🖼️ Demo 畫面展示
+
+<p align="center">
+  <img src="assets/demo2.png" alt="Grid Map Initialization" width="600"/>
+  <br>
+  <em>網格地圖設定與操作介面，支援動態生成 X 軸與 Y 軸座標提示</em>
+</p>
+
+<p align="center">
+  <img src="assets/demo1.png" alt="Value Iteration & Optimal Paths" width="600"/>
+  <br>
+  <em>Value Iteration 計算結果：視覺化展示所有最小路徑（粉紫色高光），並在下方表列完整座標清單</em>
+</p>
+
 ## 🌟 功能展示與階段實作 (Phases)
 
 ### 階段 1-1: 網格地圖開發 (Grid Map Development)
