@@ -1,58 +1,63 @@
-# Grid Map App (HW1-1)
+# HW1-1: Grid Map Environment & MDP Solver
 
-## 專案概述
-這是一個基於 Flask 開發的網格地圖應用程式，為深度強化學習課程的作業 (HW1-1)。
-應用程式允許使用者動態生成一個 $n \times n$ ($5 \le n \le 9$) 的網格，並透過互動式的圖形介面配置起點、終點與障礙物。
+這是一個基於 Flask 構建的網頁應用程式，用來視覺化與實作強化學習（Reinforcement Learning）中的**馬可夫決策過程（MDP）**。專案包含了網格地圖的建立、隨機策略評估（Policy Evaluation），以及最佳解疊代（Value Iteration）。
 
-## 系統功能與評分重點實作
-* **網格地圖開發 (60%) & 完整性 (30%)**：
-  - 預設載入 5x5 的網格地圖。
-  - 使用者能自由指定網格維度 $n$（限制在 5 到 9 之間）。
-  - 第 1 次點擊：設定為**起點（綠色）**。
-  - 第 2 次點擊：設定為**終點（紅色）**。
-  - 第 3 次及後續點擊：設定為**障礙物（灰色）**，最多只能設置 $n-2$ 個障礙物。
-  - 提供重新點選以取消設定的功能，並自動更新障礙物計數與限制。
+## 🌟 功能展示與階段實作 (Phases)
 
-* **使用者界面友好性 (15%) & 網頁操作流暢度 (5%)**：
-  - 導入深色質感主題與玻璃擬態 (Glassmorphism) 設計。
-  - 使用者點擊時有跳動與發光的微動畫 (Micro-animations)。
-  - 如果發生超過限制或輸入無效數值的操作，會有彈出式提示框 (Toast) 給予警告。
+### 階段 1-1: 網格地圖開發 (Grid Map Development)
+- **動態維度**：允許使用者輸入 `3` 到 `9` 之間的數字 $n$，動態生成大小為 $n \times n$ 的網格地圖。
+- **互動式設計**：
+  - **起點 (Start)**：點擊第一格顯示為**綠色**。
+  - **終點 (End)**：點擊第二格顯示為**紅色**（目標狀態 `+10` Reward）。
+  - **障礙物 (Obstacle)**：後續點擊之網格顯示為**灰色**，最多可設定 $n-2$ 個障礙物（撞牆或撞障礙物的 Step Penalty 為 `-1`）。
+- **使用者體驗 (UX)**：具備錯誤防呆檢查（如超出數量限制的 Toast 提示）、微動畫與現代化的深色主題。網格外圍具有自動生成的 $X$ 與 $Y$ 座標軸。
 
-## 對話與開發紀錄整理
-以下是我們在開發這份作業時的步驟與溝通紀錄：
+### 階段 1-2: 策略顯示與價值評估 (Policy Evaluation)
+- **隨機策略生成**：對每個非終端與非障礙物的狀態發布隨機的行動策略（$\uparrow, \rightarrow, \downarrow, \leftarrow$）。
+- **價值函數評估 (Value Function)**：
+  - 實作 **Iterative Policy Evaluation** 演算法，藉由 Bellman Equation 推導每個狀態的價值 $V(s)$。
+  - **MDP 參數**：折扣參數 $\gamma = 0.9$，收斂閾值 $\theta = 10^{-4}$。
+- **雙矩陣並排顯示**：按下 `Random Policy Eval` 按鈕後，會動態展開視窗並同時顯示「Value Matrix（價值矩陣）」與「Policy Matrix（策略矩陣）」。
 
-1. **初始系統開發**：
-   - 建立了 Flask 後端 (`app.py`) 與前端介面 (`templates/index.html`)。
-   - 完成了所有功能需求與優美的介面設計。
-2. **解決本地測試連線問題**：
-   - 使用者反映過了幾天後無法透過 `127.0.0.1:5000` 或 `localhost:5000` 連線。
-   - **原因**：背景的 Flask 伺服器已關閉。
-   - **解決方案**：重新執行指令 `python app.py` 來啟動伺服器。
-3. **區網與外網連線設定**：
-   - 使用者詢問如何讓知道網址的其他人也能使用。
-   - 說明 `127.0.0.1` 僅限本機。
-   - 將 `app.py` 中 Flask 的 `host` 更改為 `0.0.0.0`，使同一個網路環境(區網)底下的裝置可透過 IP 連線。
-4. **雲端部署教學**：
-   - 決定將服務部署至雲端 (例如 Render) 讓任何人隨時可用。
-   - 產生了布署所需的 `requirements.txt` 加入 Flask 和 gunicorn。
-   - 初始化 local Git 儲存庫，進行首次 Commit，並推送至使用者的 GitHub repo (`Jester-99/grid-map-app.git`)。
-   - 準備在 Render 上透過 `gunicorn app:app` 指令完成無痛上線。
-5. **產生文件**：
-   - 根據要求，將整個過程的開發重點撰寫成這份 `README.md`，並上傳至 GitHub。
-6. **持續對話紀錄追蹤**：
-   - 設定從現在起，每次有新的對話與修改，都會自動將進度與說明更新到這份文件中，並同步上傳至 GitHub。
+### 階段 1-3: 價值疊代與最佳路徑 (Value Iteration & Optimal Path)
+- **尋找最佳策略 (Optimal Policy)**：
+  - 實作 **Value Iteration** 演算法，找出在當前環境設置下，能夠最大化 Expected Return 的行動指南。
+- **最小路徑提取與多重路徑支援 (BFS Path Tracing)**：
+  - 若有多條花費相同的最短路徑（受浮點數容差 $10^{-6}$ 保護），系統會擷取所有的最佳動作。
+  - 運用**廣度優先搜尋 (BFS)** 找出所有避開障礙物、完美抵達終點的「所有可能最小路徑」。
+- **路徑視覺化與清單**：
+  - 在 Policy Matrix 畫面上，將所有最短路徑所經過的網格亮起**粉紫色高光**。
+  - 畫面下方動態生成所有可能之「最短路徑清單」，並使用 $(row, col)$ 的座標格式列出，例如：`(0,0) → (0,1) → (0,2)`。
 
-## 本地執行方式
-請確保已安裝 Python，並在終端機執行以下指令：
-```bash
-pip install -r requirements.txt
-python app.py
+## 🚀 技術架構 (Technology Stack)
+
+- **後端 (Backend)**: Python, Flask, NumPy (負責 API 接口設計、MDP 演算法與動態規劃矩陣運算)。
+- **前端 (Frontend)**: HTML5, CSS3, Vanilla JavaScript (負責非同步 `fetch` API 呼叫、網格 DOM 渲染與動畫效果)。
+
+## 📂 專案結構 (Directory Structure)
 ```
-接著打開瀏覽器存取 `http://127.0.0.1:5000/`
+HW1-1/
+├── app.py                  # Flask 主程式，包含 API Router 與 RL 邏輯 (Policy & Value Iteration)
+├── requirements.txt        # Python 依賴套件 (例如 Flask, numpy 等)
+├── README.md               # 您目前正在閱讀的專案說明文件
+└── templates/
+    └── index.html          # 前端網頁與介面邏輯 (包含 CSS 樣式與 JS 互動腳本)
+```
 
-## 雲端部署方式
-1. 將專案 Push 至 GitHub。
-2. 在 [Render](https://render.com) 選擇建立 Web Service。
-3. 綁定此 Repo，Build command 設定為 `pip install -r requirements.txt`。
-4. Start command 設定為 `gunicorn app:app`。
-5. 點擊 Deploy。
+## 🛠️ 如何執行本專案 (How to run)
+
+1. 確認已安裝 Python 3 環境。
+2. 克隆（Clone）此專案至本地端：
+   ```bash
+   git clone https://github.com/Jester-99/grid-map-app.git
+   cd grid-map-app
+   ```
+3. 建立並啟動虛擬環境 (建議)，並安裝依賴套件：
+   ```bash
+   pip install -r requirements.txt
+   ```
+4. 執行 Flask 開發環境伺服器：
+   ```bash
+   python app.py
+   ```
+5. 於瀏覽器中開啟：[http://127.0.0.1:5000](http://127.0.0.1:5000) 或對應的伺服器 IP 網址。
