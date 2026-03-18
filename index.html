@@ -386,486 +386,453 @@
                     <div class="grid" id="policyGridContainer" style="justify-content: center;"></div>
                 </div>
             </div>
-
-            <div id="pathListContainer"
-                style="display: none; margin-top: 24px; padding: 15px; border-radius: 12px; background: rgba(0,0,0,0.2); border: 1px solid rgba(255, 255, 255, 0.03); max-width: 800px; margin-left: auto; margin-right: auto;">
-                <h3 style="text-align: center; margin-top: 0; color: #ec4899; font-size: 1.1rem; margin-bottom: 12px;">
-                    Optimal Path</h3>
-                <div id="pathList"
-                    style="display: flex; flex-direction: column; gap: 8px; max-height: 150px; overflow-y: auto; padding-right: 5px;">
-                </div>
-            </div>
         </div>
-    </div>
 
-    <!-- Error Toast Notification -->
-    <div id="toast" class="toast">
-        <svg fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
-        </svg>
-        <span id="toastMsg">Limit reached!</span>
-    </div>
+        <!-- Error Toast Notification -->
+        <div id="toast" class="toast">
+            <svg fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                    d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+            </svg>
+            <span id="toastMsg">Limit reached!</span>
+        </div>
 
-    <script>
-        let maxObstacles = 0;
-        let startSet = false;
-        let endSet = false;
-        let obstacleCount = 0;
-        let currentN = 5;
-        let toastTimeout;
+        <script>
+            let maxObstacles = 0;
+            let startSet = false;
+            let endSet = false;
+            let obstacleCount = 0;
+            let currentN = 5;
+            let toastTimeout;
 
-        function showToast(msg) {
-            const toast = document.getElementById('toast');
-            document.getElementById('toastMsg').innerText = msg;
-            toast.classList.add('show');
+            function showToast(msg) {
+                const toast = document.getElementById('toast');
+                document.getElementById('toastMsg').innerText = msg;
+                toast.classList.add('show');
 
-            clearTimeout(toastTimeout);
-            toastTimeout = setTimeout(() => {
-                toast.classList.remove('show');
-            }, 3000);
-        }
-
-        function updateStatus() {
-            document.getElementById('obsCount').innerText = obstacleCount;
-            document.getElementById('obsMax').innerText = maxObstacles;
-        }
-
-        function resetGrid() {
-            startSet = false;
-            endSet = false;
-            obstacleCount = 0;
-            const cells = document.querySelectorAll('.cell');
-            cells.forEach(cell => {
-                cell.className = 'cell';
-                // Trigger reflow to clear animation state completely
-                void cell.offsetWidth;
-                cell.style.animation = null;
-            });
-            updateStatus();
-        }
-
-        function generateGrid() {
-            // Reset evaluation view if it's open
-            const resultsArea = document.getElementById('resultsArea');
-            if (resultsArea) {
-                resultsArea.style.display = 'none';
-                document.querySelector('.container').style.maxWidth = '650px';
+                clearTimeout(toastTimeout);
+                toastTimeout = setTimeout(() => {
+                    toast.classList.remove('show');
+                }, 3000);
             }
 
-            const sizeInput = document.getElementById('gridSize').value;
-            let n = parseInt(sizeInput);
-
-            if (isNaN(n) || n < 3 || n > 9) {
-                showToast("Please enter a valid dimension between 3 and 9.");
-                n = Math.max(3, Math.min(9, isNaN(n) ? 5 : n));
-                document.getElementById('gridSize').value = n;
+            function updateStatus() {
+                document.getElementById('obsCount').innerText = obstacleCount;
+                document.getElementById('obsMax').innerText = maxObstacles;
             }
 
-            currentN = n;
-            const gridContainer = document.getElementById('gridContainer');
-            gridContainer.innerHTML = '';
-
-            gridContainer.style.gridTemplateColumns = `24px repeat(${n}, 50px)`;
-
-            document.getElementById('gridTitle').innerText = `${n} x ${n} Square:`;
-
-            // Reset state
-            startSet = false;
-            endSet = false;
-            obstacleCount = 0;
-            maxObstacles = n - 2;
-            updateStatus();
-
-            let cellNumber = 1;
-            for (let i = -1; i < n; i++) {
-                for (let j = -1; j < n; j++) {
-                    if (i === -1 && j === -1) {
-                        const empty = document.createElement('div');
-                        gridContainer.appendChild(empty);
-                    } else if (i === -1) {
-                        const label = document.createElement('div');
-                        label.style.display = 'flex';
-                        label.style.alignItems = 'flex-end';
-                        label.style.justifyContent = 'center';
-                        label.style.color = 'var(--text-muted)';
-                        label.style.fontWeight = 'bold';
-                        label.style.paddingBottom = '5px';
-                        label.innerText = j;
-                        gridContainer.appendChild(label);
-                    } else if (j === -1) {
-                        const label = document.createElement('div');
-                        label.style.display = 'flex';
-                        label.style.alignItems = 'center';
-                        label.style.justifyContent = 'flex-end';
-                        label.style.color = 'var(--text-muted)';
-                        label.style.fontWeight = 'bold';
-                        label.style.paddingRight = '8px';
-                        label.innerText = i;
-                        gridContainer.appendChild(label);
-                    } else {
-                        const cell = document.createElement('div');
-                        cell.classList.add('cell');
-                        cell.innerText = "";
-                        cell.dataset.number = cellNumber;
-
-                        // Add staggered animation delay for initial render
-                        cell.style.animation = `fadeIn 0.4s ease backwards ${(i + j) * 0.04}s`;
-
-                        cell.onclick = () => handleCellClick(cell);
-                        gridContainer.appendChild(cell);
-                        cellNumber++;
-                    }
-                }
-            }
-        }
-
-        function playPopAnimation(cell) {
-            cell.style.animation = 'none';
-            void cell.offsetWidth; // Force reflow
-            cell.style.animation = 'pop 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards';
-        }
-
-        function handleCellClick(cell) {
-            // Remove state if clicking already active cell
-            if (cell.classList.contains('start')) {
-                cell.classList.remove('start');
+            function resetGrid() {
                 startSet = false;
-                cell.style.animation = 'none';
-                return;
-            }
-            if (cell.classList.contains('end')) {
-                cell.classList.remove('end');
                 endSet = false;
-                cell.style.animation = 'none';
-                return;
-            }
-            if (cell.classList.contains('obstacle')) {
-                cell.classList.remove('obstacle');
-                obstacleCount--;
+                obstacleCount = 0;
+                const cells = document.querySelectorAll('.cell');
+                cells.forEach(cell => {
+                    cell.className = 'cell';
+                    // Trigger reflow to clear animation state completely
+                    void cell.offsetWidth;
+                    cell.style.animation = null;
+                });
                 updateStatus();
-                cell.style.animation = 'none';
-                return;
             }
 
-            // Assign new state
-            if (!startSet) {
-                cell.classList.add('start');
-                startSet = true;
-                playPopAnimation(cell);
-            } else if (!endSet) {
-                cell.classList.add('end');
-                endSet = true;
-                playPopAnimation(cell);
-            } else if (obstacleCount < maxObstacles) {
-                cell.classList.add('obstacle');
-                obstacleCount++;
-                updateStatus();
-                playPopAnimation(cell);
-            } else {
-                showToast(`Limit reached: Maximum ${maxObstacles} obstacles for ${currentN}x${currentN}.`);
-            }
-        }
-
-        function evaluatePolicy() {
-            if (!endSet) {
-                showToast("Please set an end point (red cell) first.");
-                return;
-            }
-
-            const cells = document.querySelectorAll('#gridContainer .cell');
-            let start = -1;
-            let end = -1;
-            let obstacles = [];
-
-            cells.forEach((cell, index) => {
-                if (cell.classList.contains('start')) start = index;
-                if (cell.classList.contains('end')) end = index;
-                if (cell.classList.contains('obstacle')) obstacles.push(index);
-            });
-
-            const evalBtn = document.querySelector('button[onclick="evaluatePolicy()"]');
-            const originalText = evalBtn.innerText;
-            evalBtn.innerText = "Evaluating...";
-            evalBtn.disabled = true;
-
-            setTimeout(() => {
-                const n = currentN;
-                const arrows = { 0: '↑', 1: '→', 2: '↓', 3: '←' };
-                let policy = new Array(n * n).fill(0).map(() => Math.floor(Math.random() * 4));
-                let V = new Array(n * n).fill(0);
-                const gamma = 0.9;
-                const theta = 1e-4;
-
-                const terminals = end !== -1 ? [end] : [];
-                const obs_set = new Set(obstacles);
-
-                function getNextStateReward(s, a) {
-                    if (terminals.includes(s) || obs_set.has(s)) return [s, 0];
-                    let r = Math.floor(s / n), c = s % n;
-                    let nr = r, nc = c;
-                    if (a === 0) nr -= 1; else if (a === 1) nc += 1; else if (a === 2) nr += 1; else if (a === 3) nc -= 1;
-                    if (nr < 0 || nr >= n || nc < 0 || nc >= n) return [s, -1];
-                    let ns = nr * n + nc;
-                    if (obs_set.has(ns)) return [s, -1];
-                    if (terminals.includes(ns)) return [ns, 10];
-                    return [ns, -1];
+            function generateGrid() {
+                // Reset evaluation view if it's open
+                const resultsArea = document.getElementById('resultsArea');
+                if (resultsArea) {
+                    resultsArea.style.display = 'none';
+                    document.querySelector('.container').style.maxWidth = '650px';
                 }
 
-                while (true) {
-                    let delta = 0;
-                    let V_new = [...V];
-                    for (let s = 0; s < n * n; s++) {
-                        if (terminals.includes(s) || obs_set.has(s)) continue;
-                        let a = policy[s];
-                        let [ns, reward] = getNextStateReward(s, a);
-                        V_new[s] = reward + gamma * V[ns];
-                        delta = Math.max(delta, Math.abs(V[s] - V_new[s]));
+                const sizeInput = document.getElementById('gridSize').value;
+                let n = parseInt(sizeInput);
+
+                if (isNaN(n) || n < 3 || n > 9) {
+                    showToast("Please enter a valid dimension between 3 and 9.");
+                    n = Math.max(3, Math.min(9, isNaN(n) ? 5 : n));
+                    document.getElementById('gridSize').value = n;
+                }
+
+                currentN = n;
+                const gridContainer = document.getElementById('gridContainer');
+                gridContainer.innerHTML = '';
+
+                gridContainer.style.gridTemplateColumns = `24px repeat(${n}, 50px)`;
+
+                document.getElementById('gridTitle').innerText = `${n} x ${n} Square:`;
+
+                // Reset state
+                startSet = false;
+                endSet = false;
+                obstacleCount = 0;
+                maxObstacles = n - 2;
+                updateStatus();
+
+                let cellNumber = 1;
+                for (let i = -1; i < n; i++) {
+                    for (let j = -1; j < n; j++) {
+                        if (i === -1 && j === -1) {
+                            const empty = document.createElement('div');
+                            gridContainer.appendChild(empty);
+                        } else if (i === -1) {
+                            const label = document.createElement('div');
+                            label.style.display = 'flex';
+                            label.style.alignItems = 'flex-end';
+                            label.style.justifyContent = 'center';
+                            label.style.color = 'var(--text-muted)';
+                            label.style.fontWeight = 'bold';
+                            label.style.paddingBottom = '5px';
+                            label.innerText = j;
+                            gridContainer.appendChild(label);
+                        } else if (j === -1) {
+                            const label = document.createElement('div');
+                            label.style.display = 'flex';
+                            label.style.alignItems = 'center';
+                            label.style.justifyContent = 'flex-end';
+                            label.style.color = 'var(--text-muted)';
+                            label.style.fontWeight = 'bold';
+                            label.style.paddingRight = '8px';
+                            label.innerText = i;
+                            gridContainer.appendChild(label);
+                        } else {
+                            const cell = document.createElement('div');
+                            cell.classList.add('cell');
+                            cell.innerText = "";
+                            cell.dataset.number = cellNumber;
+
+                            // Add staggered animation delay for initial render
+                            cell.style.animation = `fadeIn 0.4s ease backwards ${(i + j) * 0.04}s`;
+
+                            cell.onclick = () => handleCellClick(cell);
+                            gridContainer.appendChild(cell);
+                            cellNumber++;
+                        }
                     }
-                    V = V_new;
-                    if (delta < theta) break;
+                }
+            }
+
+            function playPopAnimation(cell) {
+                cell.style.animation = 'none';
+                void cell.offsetWidth; // Force reflow
+                cell.style.animation = 'pop 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards';
+            }
+
+            function handleCellClick(cell) {
+                // Remove state if clicking already active cell
+                if (cell.classList.contains('start')) {
+                    cell.classList.remove('start');
+                    startSet = false;
+                    cell.style.animation = 'none';
+                    return;
+                }
+                if (cell.classList.contains('end')) {
+                    cell.classList.remove('end');
+                    endSet = false;
+                    cell.style.animation = 'none';
+                    return;
+                }
+                if (cell.classList.contains('obstacle')) {
+                    cell.classList.remove('obstacle');
+                    obstacleCount--;
+                    updateStatus();
+                    cell.style.animation = 'none';
+                    return;
                 }
 
-                let policy_display = [];
-                for (let s = 0; s < n * n; s++) {
-                    if (obs_set.has(s)) policy_display.push('');
-                    else if (terminals.includes(s)) policy_display.push('★');
-                    else policy_display.push(arrows[policy[s]]);
+                // Assign new state
+                if (!startSet) {
+                    cell.classList.add('start');
+                    startSet = true;
+                    playPopAnimation(cell);
+                } else if (!endSet) {
+                    cell.classList.add('end');
+                    endSet = true;
+                    playPopAnimation(cell);
+                } else if (obstacleCount < maxObstacles) {
+                    cell.classList.add('obstacle');
+                    obstacleCount++;
+                    updateStatus();
+                    playPopAnimation(cell);
+                } else {
+                    showToast(`Limit reached: Maximum ${maxObstacles} obstacles for ${currentN}x${currentN}.`);
+                }
+            }
+
+            function evaluatePolicy() {
+                if (!endSet) {
+                    showToast("Please set an end point (red cell) first.");
+                    return;
                 }
 
-                let values = V.map(v => Math.round(v * 100) / 100);
+                const cells = document.querySelectorAll('#gridContainer .cell');
+                let start = -1;
+                let end = -1;
+                let obstacles = [];
 
-                evalBtn.innerText = originalText;
-                evalBtn.disabled = false;
-                document.getElementById('resultsTitle').innerText = "Random Policy Evaluation Results";
-                document.getElementById('resultsTitle').style.color = "#8b5cf6";
-                renderMatrices(values, policy_display);
+                cells.forEach((cell, index) => {
+                    if (cell.classList.contains('start')) start = index;
+                    if (cell.classList.contains('end')) end = index;
+                    if (cell.classList.contains('obstacle')) obstacles.push(index);
+                });
+
+                const evalBtn = document.querySelector('button[onclick="evaluatePolicy()"]');
+                const originalText = evalBtn.innerText;
+                evalBtn.innerText = "Evaluating...";
+                evalBtn.disabled = true;
 
                 setTimeout(() => {
-                    document.getElementById('resultsArea').scrollIntoView({ behavior: 'smooth', block: 'end' });
-                }, 100);
-            }, 50);
-        }
+                    const n = currentN;
+                    const arrows = { 0: '↑', 1: '→', 2: '↓', 3: '←' };
+                    let policy = new Array(n * n).fill(0).map(() => Math.floor(Math.random() * 4));
+                    let V = new Array(n * n).fill(0);
+                    const gamma = 0.9;
+                    const theta = 1e-4;
 
-        function runValueIteration() {
-            if (!endSet) {
-                showToast("Please set an end point (red cell) first.");
-                return;
+                    const terminals = end !== -1 ? [end] : [];
+                    const obs_set = new Set(obstacles);
+
+                    function getNextStateReward(s, a) {
+                        if (terminals.includes(s) || obs_set.has(s)) return [s, 0];
+                        let r = Math.floor(s / n), c = s % n;
+                        let nr = r, nc = c;
+                        if (a === 0) nr -= 1; else if (a === 1) nc += 1; else if (a === 2) nr += 1; else if (a === 3) nc -= 1;
+                        if (nr < 0 || nr >= n || nc < 0 || nc >= n) return [s, -1];
+                        let ns = nr * n + nc;
+                        if (obs_set.has(ns)) return [s, -1];
+                        if (terminals.includes(ns)) return [ns, 10];
+                        return [ns, -1];
+                    }
+
+                    while (true) {
+                        let delta = 0;
+                        let V_new = [...V];
+                        for (let s = 0; s < n * n; s++) {
+                            if (terminals.includes(s) || obs_set.has(s)) continue;
+                            let a = policy[s];
+                            let [ns, reward] = getNextStateReward(s, a);
+                            V_new[s] = reward + gamma * V[ns];
+                            delta = Math.max(delta, Math.abs(V[s] - V_new[s]));
+                        }
+                        V = V_new;
+                        if (delta < theta) break;
+                    }
+
+                    let policy_display = [];
+                    for (let s = 0; s < n * n; s++) {
+                        if (obs_set.has(s)) policy_display.push('');
+                        else if (terminals.includes(s)) policy_display.push('★');
+                        else policy_display.push(arrows[policy[s]]);
+                    }
+
+                    let values = V.map(v => Math.round(v * 100) / 100);
+
+                    evalBtn.innerText = originalText;
+                    evalBtn.disabled = false;
+                    document.getElementById('resultsTitle').innerText = "Random Policy Evaluation Results";
+                    document.getElementById('resultsTitle').style.color = "#8b5cf6";
+                    renderMatrices(values, policy_display);
+
+                    setTimeout(() => {
+                        document.getElementById('resultsArea').scrollIntoView({ behavior: 'smooth', block: 'end' });
+                    }, 100);
+                }, 50);
             }
 
-            const cells = document.querySelectorAll('#gridContainer .cell');
-            let start = -1;
-            let end = -1;
-            let obstacles = [];
-
-            cells.forEach((cell, index) => {
-                if (cell.classList.contains('start')) start = index;
-                if (cell.classList.contains('end')) end = index;
-                if (cell.classList.contains('obstacle')) obstacles.push(index);
-            });
-
-            const valBtn = document.querySelector('button[onclick="runValueIteration()"]');
-            const originalText = valBtn.innerText;
-            valBtn.innerText = "Computing...";
-            valBtn.disabled = true;
-
-            setTimeout(() => {
-                const n = currentN;
-                const arrows = { 0: '↑', 1: '→', 2: '↓', 3: '←' };
-                let V = new Array(n * n).fill(0);
-                const gamma = 0.9;
-                const theta = 1e-4;
-
-                const terminals = end !== -1 ? [end] : [];
-                const obs_set = new Set(obstacles);
-
-                function getNextStateReward(s, a) {
-                    if (terminals.includes(s) || obs_set.has(s)) return [s, 0];
-                    let r = Math.floor(s / n), c = s % n;
-                    let nr = r, nc = c;
-                    if (a === 0) nr -= 1; else if (a === 1) nc += 1; else if (a === 2) nr += 1; else if (a === 3) nc -= 1;
-                    if (nr < 0 || nr >= n || nc < 0 || nc >= n) return [s, -1];
-                    let ns = nr * n + nc;
-                    if (obs_set.has(ns)) return [s, -1];
-                    if (terminals.includes(ns)) return [ns, 10];
-                    return [ns, -1];
+            function runValueIteration() {
+                if (!endSet) {
+                    showToast("Please set an end point (red cell) first.");
+                    return;
                 }
 
-                while (true) {
-                    let delta = 0;
-                    let V_new = [...V];
+                const cells = document.querySelectorAll('#gridContainer .cell');
+                let start = -1;
+                let end = -1;
+                let obstacles = [];
+
+                cells.forEach((cell, index) => {
+                    if (cell.classList.contains('start')) start = index;
+                    if (cell.classList.contains('end')) end = index;
+                    if (cell.classList.contains('obstacle')) obstacles.push(index);
+                });
+
+                const valBtn = document.querySelector('button[onclick="runValueIteration()"]');
+                const originalText = valBtn.innerText;
+                valBtn.innerText = "Computing...";
+                valBtn.disabled = true;
+
+                setTimeout(() => {
+                    const n = currentN;
+                    const arrows = { 0: '↑', 1: '→', 2: '↓', 3: '←' };
+                    let V = new Array(n * n).fill(0);
+                    const gamma = 0.9;
+                    const theta = 1e-4;
+
+                    const terminals = end !== -1 ? [end] : [];
+                    const obs_set = new Set(obstacles);
+
+                    function getNextStateReward(s, a) {
+                        if (terminals.includes(s) || obs_set.has(s)) return [s, 0];
+                        let r = Math.floor(s / n), c = s % n;
+                        let nr = r, nc = c;
+                        if (a === 0) nr -= 1; else if (a === 1) nc += 1; else if (a === 2) nr += 1; else if (a === 3) nc -= 1;
+                        if (nr < 0 || nr >= n || nc < 0 || nc >= n) return [s, -1];
+                        let ns = nr * n + nc;
+                        if (obs_set.has(ns)) return [s, -1];
+                        if (terminals.includes(ns)) return [ns, 10];
+                        return [ns, -1];
+                    }
+
+                    while (true) {
+                        let delta = 0;
+                        let V_new = [...V];
+                        for (let s = 0; s < n * n; s++) {
+                            if (terminals.includes(s) || obs_set.has(s)) continue;
+                            let max_val = -Infinity;
+                            for (let a = 0; a < 4; a++) {
+                                let [ns, reward] = getNextStateReward(s, a);
+                                let val = reward + gamma * V[ns];
+                                if (val > max_val) max_val = val;
+                            }
+                            V_new[s] = max_val;
+                            delta = Math.max(delta, Math.abs(V[s] - V_new[s]));
+                        }
+                        V = V_new;
+                        if (delta < theta) break;
+                    }
+
+                    let policy = new Array(n * n).fill(0);
                     for (let s = 0; s < n * n; s++) {
                         if (terminals.includes(s) || obs_set.has(s)) continue;
                         let max_val = -Infinity;
+                        let best_a = 0;
                         for (let a = 0; a < 4; a++) {
                             let [ns, reward] = getNextStateReward(s, a);
                             let val = reward + gamma * V[ns];
-                            if (val > max_val) max_val = val;
+                            if (val > max_val) {
+                                max_val = val;
+                                best_a = a;
+                            }
                         }
-                        V_new[s] = max_val;
-                        delta = Math.max(delta, Math.abs(V[s] - V_new[s]));
+                        policy[s] = best_a;
                     }
-                    V = V_new;
-                    if (delta < theta) break;
-                }
 
-                let policy = new Array(n * n).fill(0);
-                for (let s = 0; s < n * n; s++) {
-                    if (terminals.includes(s) || obs_set.has(s)) continue;
-                    let max_val = -Infinity;
-                    let best_a = 0;
-                    for (let a = 0; a < 4; a++) {
-                        let [ns, reward] = getNextStateReward(s, a);
-                        let val = reward + gamma * V[ns];
-                        if (val > max_val) {
-                            max_val = val;
-                            best_a = a;
+                    let policy_display = [];
+                    for (let s = 0; s < n * n; s++) {
+                        if (obs_set.has(s)) policy_display.push('');
+                        else if (terminals.includes(s)) policy_display.push('★');
+                        else policy_display.push(arrows[policy[s]]);
+                    }
+
+                    let path = [];
+                    let all_paths_display = [];
+                    if (start !== -1 && end !== -1) {
+                        let curr = start;
+                        let visited = new Set();
+                        while (curr !== end && !visited.has(curr)) {
+                            path.push(curr);
+                            visited.add(curr);
+                            let a = policy[curr];
+                            let [ns, _] = getNextStateReward(curr, a);
+                            if (ns === curr) break;
+                            curr = ns;
                         }
+                        if (curr === end) path.push(end);
                     }
-                    policy[s] = best_a;
-                }
+                    let values = V.map(v => Math.round(v * 100) / 100);
 
-                let policy_display = [];
-                for (let s = 0; s < n * n; s++) {
-                    if (obs_set.has(s)) policy_display.push('');
-                    else if (terminals.includes(s)) policy_display.push('★');
-                    else policy_display.push(arrows[policy[s]]);
-                }
+                    valBtn.innerText = originalText;
+                    valBtn.disabled = false;
+                    document.getElementById('resultsTitle').innerText = "Optimal Policy (Value Iteration Results)";
+                    document.getElementById('resultsTitle').style.color = "#ec4899";
+                    renderMatrices(values, policy_display, path);
 
-                let path = [];
-                let all_paths_display = [];
-                if (start !== -1 && end !== -1) {
-                    let curr = start;
-                    let visited = new Set();
-                    while (curr !== end && !visited.has(curr)) {
-                        path.push(curr);
-                        visited.add(curr);
-                        let a = policy[curr];
-                        let [ns, _] = getNextStateReward(curr, a);
-                        if (ns === curr) break;
-                        curr = ns;
-                    }
-                    if (curr === end) path.push(end);
-
-                    let coordsPath = path.map(s => `(${Math.floor(s / n)},${s % n})`);
-                    all_paths_display.push(coordsPath);
-                }
-                let values = V.map(v => Math.round(v * 100) / 100);
-
-                valBtn.innerText = originalText;
-                valBtn.disabled = false;
-                document.getElementById('resultsTitle').innerText = "Optimal Policy (Value Iteration Results)";
-                document.getElementById('resultsTitle').style.color = "#ec4899";
-                renderMatrices(values, policy_display, path, all_paths_display);
-
-                setTimeout(() => {
-                    document.getElementById('resultsArea').scrollIntoView({ behavior: 'smooth', block: 'end' });
-                }, 100);
-            }, 50);
-        }
-
-        function renderMatrices(values, policy, opPath = [], allPaths = []) {
-            document.querySelector('.container').style.maxWidth = '1050px';
-            const resultsArea = document.getElementById('resultsArea');
-            resultsArea.style.display = 'block';
-
-            const valueGrid = document.getElementById('valueGridContainer');
-            const policyGrid = document.getElementById('policyGridContainer');
-            const pathListContainer = document.getElementById('pathListContainer');
-            const pathList = document.getElementById('pathList');
-
-            if (allPaths && allPaths.length > 0) {
-                pathListContainer.style.display = 'block';
-                pathList.innerHTML = '';
-                allPaths.forEach((p, idx) => {
-                    const row = document.createElement('div');
-                    row.style.background = 'rgba(236, 72, 153, 0.1)';
-                    row.style.border = '1px solid rgba(236, 72, 153, 0.3)';
-                    row.style.padding = '8px 12px';
-                    row.style.borderRadius = '8px';
-                    row.style.fontSize = '0.9rem';
-                    row.style.color = '#f8fafc';
-                    row.innerHTML = `<strong style="color: #ec4899;">Path ${idx + 1}:</strong> ${p.join(' &rarr; ')}`;
-                    pathList.appendChild(row);
-                });
-            } else {
-                pathListContainer.style.display = 'none';
+                    setTimeout(() => {
+                        document.getElementById('resultsArea').scrollIntoView({ behavior: 'smooth', block: 'end' });
+                    }, 100);
+                }, 50);
             }
 
-            // Smaller cells (40px) to ensure matrices fit well side by side
-            valueGrid.style.gridTemplateColumns = `24px repeat(${currentN}, 40px)`;
-            policyGrid.style.gridTemplateColumns = `24px repeat(${currentN}, 40px)`;
+            function renderMatrices(values, policy, opPath = []) {
+                document.querySelector('.container').style.maxWidth = '1050px';
+                const resultsArea = document.getElementById('resultsArea');
+                resultsArea.style.display = 'block';
 
-            valueGrid.innerHTML = '';
-            policyGrid.innerHTML = '';
+                const valueGrid = document.getElementById('valueGridContainer');
+                const policyGrid = document.getElementById('policyGridContainer');
 
-            const cells = document.querySelectorAll('#gridContainer .cell');
+                // Smaller cells (40px) to ensure matrices fit well side by side
+                valueGrid.style.gridTemplateColumns = `24px repeat(${currentN}, 40px)`;
+                policyGrid.style.gridTemplateColumns = `24px repeat(${currentN}, 40px)`;
 
-            for (let i = -1; i < currentN; i++) {
-                for (let j = -1; j < currentN; j++) {
-                    if (i === -1 && j === -1) {
-                        valueGrid.appendChild(document.createElement('div'));
-                        policyGrid.appendChild(document.createElement('div'));
-                    } else if (i === -1) {
-                        const lbl1 = document.createElement('div');
-                        lbl1.style.cssText = 'display:flex;align-items:flex-end;justify-content:center;color:var(--text-muted);font-weight:bold;font-size:0.85rem;padding-bottom:5px;';
-                        lbl1.innerText = j;
-                        const lbl2 = lbl1.cloneNode(true);
-                        valueGrid.appendChild(lbl1);
-                        policyGrid.appendChild(lbl2);
-                    } else if (j === -1) {
-                        const lbl1 = document.createElement('div');
-                        lbl1.style.cssText = 'display:flex;align-items:center;justify-content:flex-end;color:var(--text-muted);font-weight:bold;font-size:0.85rem;padding-right:8px;';
-                        lbl1.innerText = i;
-                        const lbl2 = lbl1.cloneNode(true);
-                        valueGrid.appendChild(lbl1);
-                        policyGrid.appendChild(lbl2);
-                    } else {
-                        let cellIdx = i * currentN + j;
+                valueGrid.innerHTML = '';
+                policyGrid.innerHTML = '';
 
-                        // Shared cell creation logic
-                        function createDisplayCell(parentGrid, content, isValue, isActivePath = false) {
-                            const c = document.createElement('div');
-                            c.className = cells[cellIdx].className;
-                            c.style.animation = 'none'; // remove bouncing animation
-                            c.style.width = '40px';
-                            c.style.height = '40px';
-                            c.style.transform = 'none'; // disable hover transform popping
-                            c.style.boxShadow = 'none';
-                            // Smaller font sizes for tighter grid
-                            c.style.fontSize = isValue ? '0.75rem' : '1.2rem';
-                            c.style.cursor = 'default';
+                const cells = document.querySelectorAll('#gridContainer .cell');
 
-                            if (cells[cellIdx].classList.contains('obstacle')) {
-                                c.innerText = '';
-                            } else if (cells[cellIdx].classList.contains('end')) {
-                                c.innerText = isValue ? '0' : '★';
-                            } else {
-                                c.innerText = content;
+                for (let i = -1; i < currentN; i++) {
+                    for (let j = -1; j < currentN; j++) {
+                        if (i === -1 && j === -1) {
+                            valueGrid.appendChild(document.createElement('div'));
+                            policyGrid.appendChild(document.createElement('div'));
+                        } else if (i === -1) {
+                            const lbl1 = document.createElement('div');
+                            lbl1.style.cssText = 'display:flex;align-items:flex-end;justify-content:center;color:var(--text-muted);font-weight:bold;font-size:0.85rem;padding-bottom:5px;';
+                            lbl1.innerText = j;
+                            const lbl2 = lbl1.cloneNode(true);
+                            valueGrid.appendChild(lbl1);
+                            policyGrid.appendChild(lbl2);
+                        } else if (j === -1) {
+                            const lbl1 = document.createElement('div');
+                            lbl1.style.cssText = 'display:flex;align-items:center;justify-content:flex-end;color:var(--text-muted);font-weight:bold;font-size:0.85rem;padding-right:8px;';
+                            lbl1.innerText = i;
+                            const lbl2 = lbl1.cloneNode(true);
+                            valueGrid.appendChild(lbl1);
+                            policyGrid.appendChild(lbl2);
+                        } else {
+                            let cellIdx = i * currentN + j;
+
+                            // Shared cell creation logic
+                            function createDisplayCell(parentGrid, content, isValue, isActivePath = false) {
+                                const c = document.createElement('div');
+                                c.className = cells[cellIdx].className;
+                                c.style.animation = 'none'; // remove bouncing animation
+                                c.style.width = '40px';
+                                c.style.height = '40px';
+                                c.style.transform = 'none'; // disable hover transform popping
+                                c.style.boxShadow = 'none';
+                                // Smaller font sizes for tighter grid
+                                c.style.fontSize = isValue ? '0.75rem' : '1.2rem';
+                                c.style.cursor = 'default';
+
+                                if (cells[cellIdx].classList.contains('obstacle')) {
+                                    c.innerText = '';
+                                } else if (cells[cellIdx].classList.contains('end')) {
+                                    c.innerText = isValue ? '0' : '★';
+                                } else {
+                                    c.innerText = content;
+                                }
+
+                                // Highlight optimal path cells
+                                if (!isValue && isActivePath && !cells[cellIdx].classList.contains('start') && !cells[cellIdx].classList.contains('end')) {
+                                    c.style.backgroundColor = 'rgba(236, 72, 153, 0.4)'; // Pink tint for path
+                                    c.style.borderColor = '#ec4899';
+                                    c.style.color = 'white';
+                                    c.style.boxShadow = 'inset 0 0 8px rgba(236, 72, 153, 0.5)';
+                                }
+
+                                parentGrid.appendChild(c);
                             }
 
-                            // Highlight optimal path cells
-                            if (!isValue && isActivePath && !cells[cellIdx].classList.contains('start') && !cells[cellIdx].classList.contains('end')) {
-                                c.style.backgroundColor = 'rgba(236, 72, 153, 0.4)'; // Pink tint for path
-                                c.style.borderColor = '#ec4899';
-                                c.style.color = 'white';
-                                c.style.boxShadow = 'inset 0 0 8px rgba(236, 72, 153, 0.5)';
-                            }
-
-                            parentGrid.appendChild(c);
+                            const isPathNode = opPath.includes(cellIdx);
+                            createDisplayCell(valueGrid, values[cellIdx], true, false);
+                            createDisplayCell(policyGrid, policy[cellIdx], false, isPathNode);
                         }
-
-                        const isPathNode = opPath.includes(cellIdx);
-                        createDisplayCell(valueGrid, values[cellIdx], true, false);
-                        createDisplayCell(policyGrid, policy[cellIdx], false, isPathNode);
                     }
                 }
             }
-        }
 
-        // Initialize grid on load
-        generateGrid();
-    </script>
+            // Initialize grid on load
+            generateGrid();
+        </script>
 </body>
 
 </html>

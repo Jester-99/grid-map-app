@@ -203,7 +203,6 @@ def value_iteration():
             
     # === 找出所有最佳/最小路徑 (Trace All Optimal Paths) ===
     path_nodes = set()
-    all_paths_display = []
     if start != -1 and end != -1:
         curr = start
         curr_path = []
@@ -220,15 +219,13 @@ def value_iteration():
             curr_path.append(end)
             
         path_nodes.update(curr_path)
-        all_paths_display.append([f"({s // n},{s % n})" for s in curr_path])
                     
     path = list(path_nodes)
 
     return jsonify({
         'values': np.round(V, 2).tolist(),
         'policy': policy_display,
-        'path': path,
-        'all_paths': all_paths_display
+        'path': path
     })
 
 if __name__ == '__main__':
