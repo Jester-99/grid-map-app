@@ -13,7 +13,7 @@
 <p align="center">
   <img src="assets/demo1.png" alt="Value Iteration & Optimal Paths" width="600"/>
   <br>
-  <em>Value Iteration 計算結果：視覺化展示所有最小路徑（粉紫色高光），並在下方表列完整座標清單</em>
+  <em>Value Iteration 計算結果：視覺化展示單一最佳路徑（粉紅色高光）</em>
 </p>
 
 ## 🌟 功能展示與階段實作 (Phases)
@@ -36,34 +36,45 @@
 ### 階段 1-3: 價值疊代與最佳路徑 (Value Iteration & Optimal Path)
 - **尋找最佳策略 (Optimal Policy)**：
   - 實作 **Value Iteration** 演算法，找出在當前環境設置下，能夠最大化 Expected Return 的行動指南。
-- **最小路徑提取與多重路徑支援 (BFS Path Tracing)**：
-  - 若有多條花費相同的最短路徑（受浮點數容差 $10^{-6}$ 保護），系統會擷取所有的最佳動作。
-  - 運用**廣度優先搜尋 (BFS)** 找出所有避開障礙物、完美抵達終點的「所有可能最小路徑」。
-- **路徑視覺化與清單**：
-  - 在 Policy Matrix 畫面上，將所有最短路徑所經過的網格亮起**粉紫色高光**。
-  - 畫面下方動態生成所有可能之「最短路徑清單」，並使用 $(row, col)$ 的座標格式列出，例如：`(0,0) → (0,1) → (0,2)`。
+- **單一最小路徑提取 (Single Optimal Path)**：
+  - 遇到相同價值時，演算法會挑選並儲存第一個最佳的行動方向，確保策略單一性。
+  - 運用程式邏輯找出避開障礙物、完美抵達終點的「最佳最短路徑」。
+- **路徑視覺化**：
+  - 在 Policy Matrix 畫面上，將最短路徑所經過的網格亮起**粉紅色高光**，一目了然。
 
 ## 🚀 技術架構 (Technology Stack)
 
-- **前端 (Frontend)**: HTML5, CSS3, Vanilla JavaScript (負責網格 DOM 渲染、動畫效果及 MDP 動態規劃矩陣邏輯)。完全 Client-Side 運行，無需後端伺服器！
+- **後端 (Backend)**: Python, Flask, NumPy (負責強化學習之 Value Iteration 與 Policy Evaluation 核心演算法矩陣運算)。
+- **前端 (Frontend)**: HTML5, CSS3, Vanilla JavaScript (負責網格 DOM 渲染、動畫效果及介面互動)，透過 AJAX fetch API 與後端溝通。
 
 ## 📂 專案結構 (Directory Structure)
 ```
 HW1-1/
-├── index.html              # 唯一主程式入口，包含 HTML UI 結構、CSS 樣式與完整的 RL (Value Iteration) JS 演算法邏輯
-├── README.md               # 您目前正在閱讀的專案說明文件
+├── app.py                  # Flask 核心伺服器與強化學習 API 端點
+├── requirements.txt        # Python 依賴套件 (Flask, NumPy 等)
+├── templates/
+│   └── index.html          # HTML UI 結構、CSS 樣式與負責串接 API 的前端 JS 邏輯
+├── README.md               # 專案說明文件
 └── assets/                 # 存放 Demo 圖片用資料夾
 ```
 
 ## 🛠️ 如何執行本專案 (How to run)
 
-因為這專案設計為 **完全前端獨立運行 (Client-side Only)**，您不再需要設定任何 Python 或伺服器環境！
+本專案是一個具互動性的 Flask 網頁應用程式，請確保您的系統已安裝 Python 3.x 環境。
 
 1. 克隆（Clone）此專案至本地端（或直接下載 ZIP）：
    ```bash
    git clone https://github.com/Jester-99/grid-map-app.git
    cd grid-map-app
    ```
-2. 直接使用任何現代瀏覽器 (Chrome, Edge, Safari...) 開啟 `index.html` 檔案即可！
-   
-> 💡 **提示**: 這個專案可以直接部署至 **GitHub Pages** (進入 Repo 設定 -> Pages -> 把 Branch 設為 main)，就可以獲得一個公開的專屬 Demo 網址！
+2. 安裝必要的 Python 套件：
+   ```bash
+   pip install -r requirements.txt
+   ```
+3. 執行 Flask 伺服器啟動程式：
+   ```bash
+   python app.py
+   ```
+4. 開啟您的瀏覽器，並前往 `http://localhost:5000` 即可開始體驗！
+
+> 💡 **提示**: 本專案的 `Demo` 分支為「純前端」靜態版本，可直接掛載於 GitHub Pages 執行，若不想安裝環境可直接切換至該分支遊玩！
