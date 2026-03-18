@@ -390,7 +390,7 @@
             <div id="pathListContainer"
                 style="display: none; margin-top: 24px; padding: 15px; border-radius: 12px; background: rgba(0,0,0,0.2); border: 1px solid rgba(255, 255, 255, 0.03); max-width: 800px; margin-left: auto; margin-right: auto;">
                 <h3 style="text-align: center; margin-top: 0; color: #ec4899; font-size: 1.1rem; margin-bottom: 12px;">
-                    All Minimum Optimal Paths</h3>
+                    Optimal Path</h3>
                 <div id="pathList"
                     style="display: flex; flex-direction: column; gap: 8px; max-height: 150px; overflow-y: auto; padding-right: 5px;">
                 </div>
@@ -709,52 +709,47 @@
                     if (delta < theta) break;
                 }
 
-                let policy = Array.from({ length: n * n }, () => []);
+                let policy = new Array(n * n).fill(0);
                 for (let s = 0; s < n * n; s++) {
                     if (terminals.includes(s) || obs_set.has(s)) continue;
                     let max_val = -Infinity;
+                    let best_a = 0;
                     for (let a = 0; a < 4; a++) {
                         let [ns, reward] = getNextStateReward(s, a);
                         let val = reward + gamma * V[ns];
-                        if (val > max_val + 1e-6) {
+                        if (val > max_val) {
                             max_val = val;
-                            policy[s] = [a];
-                        } else if (Math.abs(val - max_val) <= 1e-6) {
-                            policy[s].push(a);
+                            best_a = a;
                         }
                     }
+                    policy[s] = best_a;
                 }
 
                 let policy_display = [];
                 for (let s = 0; s < n * n; s++) {
                     if (obs_set.has(s)) policy_display.push('');
                     else if (terminals.includes(s)) policy_display.push('★');
-                    else policy_display.push(policy[s].map(a => arrows[a]).join(''));
+                    else policy_display.push(arrows[policy[s]]);
                 }
 
-                let path_nodes = new Set();
+                let path = [];
                 let all_paths_display = [];
                 if (start !== -1 && end !== -1) {
-                    let paths = [[start]];
-                    while (paths.length > 0) {
-                        let curr_path = paths.shift();
-                        let curr = curr_path[curr_path.length - 1];
-                        if (curr === end) {
-                            curr_path.forEach(node => path_nodes.add(node));
-                            let coordsPath = curr_path.map(s => `(${Math.floor(s / n)},${s % n})`);
-                            all_paths_display.push(coordsPath);
-                            continue;
-                        }
-                        for (let a of policy[curr]) {
-                            let [ns, _] = getNextStateReward(curr, a);
-                            if (ns !== curr && !curr_path.includes(ns)) {
-                                paths.push([...curr_path, ns]);
-                            }
-                        }
+                    let curr = start;
+                    let visited = new Set();
+                    while (curr !== end && !visited.has(curr)) {
+                        path.push(curr);
+                        visited.add(curr);
+                        let a = policy[curr];
+                        let [ns, _] = getNextStateReward(curr, a);
+                        if (ns === curr) break;
+                        curr = ns;
                     }
-                }
+                    if (curr === end) path.push(end);
 
-                let path = Array.from(path_nodes);
+                    let coordsPath = path.map(s => `(${Math.floor(s / n)},${s % n})`);
+                    all_paths_display.push(coordsPath);
+                }
                 let values = V.map(v => Math.round(v * 100) / 100);
 
                 valBtn.innerText = originalText;
