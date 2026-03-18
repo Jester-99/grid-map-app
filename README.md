@@ -5,13 +5,13 @@
 ## 🖼️ Demo 畫面展示
 
 <p align="center">
-  <img src="assets/demo2.png" alt="Grid Map Initialization" width="600"/>
+  <img src="assets/grid_setup_demo.png" alt="Grid Map Initialization" width="600"/>
   <br>
   <em>網格地圖設定與操作介面，支援動態生成 X 軸與 Y 軸座標提示</em>
 </p>
 
 <p align="center">
-  <img src="assets/demo1.png" alt="Value Iteration & Optimal Paths" width="600"/>
+  <img src="assets/optimal_policy_demo.png" alt="Value Iteration & Optimal Paths" width="600"/>
   <br>
   <em>Value Iteration 計算結果：視覺化展示單一最佳路徑（粉紅色高光）</em>
 </p>
