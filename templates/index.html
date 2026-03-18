@@ -579,34 +579,34 @@
                 evalBtn.innerText = "Evaluating...";
                 evalBtn.disabled = true;
 
-            fetch('/evaluate', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                    n: currentN,
-                    start: start,
-                    end: end,
-                    obstacles: obstacles
+                fetch('/evaluate', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        n: currentN,
+                        start: start,
+                        end: end,
+                        obstacles: obstacles
+                    })
                 })
-            })
-                .then(res => res.json())
-                .then(data => {
-                    evalBtn.innerText = originalText;
-                    evalBtn.disabled = false;
-                    document.getElementById('resultsTitle').innerText = "Random Policy Evaluation Results";
-                    document.getElementById('resultsTitle').style.color = "#8b5cf6";
-                    renderMatrices(data.values, data.policy);
+                    .then(res => res.json())
+                    .then(data => {
+                        evalBtn.innerText = originalText;
+                        evalBtn.disabled = false;
+                        document.getElementById('resultsTitle').innerText = "Random Policy Evaluation Results";
+                        document.getElementById('resultsTitle').style.color = "#8b5cf6";
+                        renderMatrices(data.values, data.policy);
 
-                    setTimeout(() => {
-                        document.getElementById('resultsArea').scrollIntoView({ behavior: 'smooth', block: 'end' });
-                    }, 100);
-                })
-                .catch(err => {
-                    console.error(err);
-                    showToast("Evaluation failed. See console.");
-                    evalBtn.innerText = originalText;
-                    evalBtn.disabled = false;
-                });
+                        setTimeout(() => {
+                            document.getElementById('resultsArea').scrollIntoView({ behavior: 'smooth', block: 'end' });
+                        }, 100);
+                    })
+                    .catch(err => {
+                        console.error(err);
+                        showToast("Evaluation failed. See console.");
+                        evalBtn.innerText = originalText;
+                        evalBtn.disabled = false;
+                    });
             }
 
             function runValueIteration() {
@@ -631,35 +631,34 @@
                 valBtn.innerText = "Computing...";
                 valBtn.disabled = true;
 
-            fetch('/value_iteration', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                    n: currentN,
-                    start: start,
-                    end: end,
-                    obstacles: obstacles
+                fetch('/value_iteration', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        n: currentN,
+                        start: start,
+                        end: end,
+                        obstacles: obstacles
+                    })
                 })
-            })
-                .then(res => res.json())
-                .then(data => {
-                    valBtn.innerText = originalText;
-                    valBtn.disabled = false;
-                    document.getElementById('resultsTitle').innerText = "Optimal Policy (Value Iteration Results)";
-                    document.getElementById('resultsTitle').style.color = "#ec4899";
-                    renderMatrices(data.values, data.policy, data.path);
+                    .then(res => res.json())
+                    .then(data => {
+                        valBtn.innerText = originalText;
+                        valBtn.disabled = false;
+                        document.getElementById('resultsTitle').innerText = "Optimal Policy (Value Iteration Results)";
+                        document.getElementById('resultsTitle').style.color = "#ec4899";
+                        renderMatrices(data.values, data.policy, data.path);
 
-                    setTimeout(() => {
-                        document.getElementById('resultsArea').scrollIntoView({ behavior: 'smooth', block: 'end' });
-                    }, 100);
-                })
-                .catch(err => {
-                    console.error(err);
-                    showToast("Value Iteration failed. See console.");
-                    valBtn.innerText = originalText;
-                    valBtn.disabled = false;
-                });
-                }, 50);
+                        setTimeout(() => {
+                            document.getElementById('resultsArea').scrollIntoView({ behavior: 'smooth', block: 'end' });
+                        }, 100);
+                    })
+                    .catch(err => {
+                        console.error(err);
+                        showToast("Value Iteration failed. See console.");
+                        valBtn.innerText = originalText;
+                        valBtn.disabled = false;
+                    });
             }
 
             function renderMatrices(values, policy, opPath = []) {
