@@ -45,33 +45,25 @@
 
 ## 🚀 技術架構 (Technology Stack)
 
-- **後端 (Backend)**: Python, Flask, NumPy (負責 API 接口設計、MDP 演算法與動態規劃矩陣運算)。
-- **前端 (Frontend)**: HTML5, CSS3, Vanilla JavaScript (負責非同步 `fetch` API 呼叫、網格 DOM 渲染與動畫效果)。
+- **前端 (Frontend)**: HTML5, CSS3, Vanilla JavaScript (負責網格 DOM 渲染、動畫效果及 MDP 動態規劃矩陣邏輯)。完全 Client-Side 運行，無需後端伺服器！
 
 ## 📂 專案結構 (Directory Structure)
 ```
 HW1-1/
-├── app.py                  # Flask 主程式，包含 API Router 與 RL 邏輯 (Policy & Value Iteration)
-├── requirements.txt        # Python 依賴套件 (例如 Flask, numpy 等)
+├── index.html              # 唯一主程式入口，包含 HTML UI 結構、CSS 樣式與完整的 RL (Value Iteration) JS 演算法邏輯
 ├── README.md               # 您目前正在閱讀的專案說明文件
-└── templates/
-    └── index.html          # 前端網頁與介面邏輯 (包含 CSS 樣式與 JS 互動腳本)
+└── assets/                 # 存放 Demo 圖片用資料夾
 ```
 
 ## 🛠️ 如何執行本專案 (How to run)
 
-1. 確認已安裝 Python 3 環境。
-2. 克隆（Clone）此專案至本地端：
+因為這專案設計為 **完全前端獨立運行 (Client-side Only)**，您不再需要設定任何 Python 或伺服器環境！
+
+1. 克隆（Clone）此專案至本地端（或直接下載 ZIP）：
    ```bash
    git clone https://github.com/Jester-99/grid-map-app.git
    cd grid-map-app
    ```
-3. 建立並啟動虛擬環境 (建議)，並安裝依賴套件：
-   ```bash
-   pip install -r requirements.txt
-   ```
-4. 執行 Flask 開發環境伺服器：
-   ```bash
-   python app.py
-   ```
-5. 於瀏覽器中開啟：[http://127.0.0.1:5000](http://127.0.0.1:5000) 或對應的伺服器 IP 網址。
+2. 直接使用任何現代瀏覽器 (Chrome, Edge, Safari...) 開啟 `index.html` 檔案即可！
+   
+> 💡 **提示**: 這個專案可以直接部署至 **GitHub Pages** (進入 Repo 設定 -> Pages -> 把 Branch 設為 main)，就可以獲得一個公開的專屬 Demo 網址！

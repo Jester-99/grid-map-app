@@ -589,33 +589,62 @@
             evalBtn.innerText = "Evaluating...";
             evalBtn.disabled = true;
 
-            fetch('/evaluate', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                    n: currentN,
-                    start: start,
-                    end: end,
-                    obstacles: obstacles
-                })
-            })
-                .then(res => res.json())
-                .then(data => {
-                    evalBtn.innerText = originalText;
-                    evalBtn.disabled = false;
-                    document.getElementById('resultsTitle').innerText = "Random Policy Evaluation Results";
-                    document.getElementById('resultsTitle').style.color = "#8b5cf6";
-                    renderMatrices(data.values, data.policy);
-                    setTimeout(() => {
-                        document.getElementById('resultsArea').scrollIntoView({ behavior: 'smooth', block: 'end' });
-                    }, 100);
-                })
-                .catch(err => {
-                    console.error(err);
-                    showToast("Evaluation failed. See console.");
-                    evalBtn.innerText = originalText;
-                    evalBtn.disabled = false;
-                });
+            setTimeout(() => {
+                const n = currentN;
+                const arrows = { 0: '↑', 1: '→', 2: '↓', 3: '←' };
+                let policy = new Array(n * n).fill(0).map(() => Math.floor(Math.random() * 4));
+                let V = new Array(n * n).fill(0);
+                const gamma = 0.9;
+                const theta = 1e-4;
+
+                const terminals = end !== -1 ? [end] : [];
+                const obs_set = new Set(obstacles);
+
+                function getNextStateReward(s, a) {
+                    if (terminals.includes(s) || obs_set.has(s)) return [s, 0];
+                    let r = Math.floor(s / n), c = s % n;
+                    let nr = r, nc = c;
+                    if (a === 0) nr -= 1; else if (a === 1) nc += 1; else if (a === 2) nr += 1; else if (a === 3) nc -= 1;
+                    if (nr < 0 || nr >= n || nc < 0 || nc >= n) return [s, -1];
+                    let ns = nr * n + nc;
+                    if (obs_set.has(ns)) return [s, -1];
+                    if (terminals.includes(ns)) return [ns, 10];
+                    return [ns, -1];
+                }
+
+                while (true) {
+                    let delta = 0;
+                    let V_new = [...V];
+                    for (let s = 0; s < n * n; s++) {
+                        if (terminals.includes(s) || obs_set.has(s)) continue;
+                        let a = policy[s];
+                        let [ns, reward] = getNextStateReward(s, a);
+                        V_new[s] = reward + gamma * V[ns];
+                        delta = Math.max(delta, Math.abs(V[s] - V_new[s]));
+                    }
+                    V = V_new;
+                    if (delta < theta) break;
+                }
+
+                let policy_display = [];
+                for (let s = 0; s < n * n; s++) {
+                    if (obs_set.has(s)) policy_display.push('');
+                    else if (terminals.includes(s)) policy_display.push('★');
+                    else policy_display.push(arrows[policy[s]]);
+                }
+
+                let values = V.map(v => Math.round(v * 100) / 100);
+
+                evalBtn.innerText = originalText;
+                evalBtn.disabled = false;
+                document.getElementById('resultsTitle').innerText = "Random Policy Evaluation Results";
+                document.getElementById('resultsTitle').style.color = "#8b5cf6";
+                renderMatrices(values, policy_display);
+
+                setTimeout(() => {
+                    document.getElementById('resultsArea').scrollIntoView({ behavior: 'smooth', block: 'end' });
+                }, 100);
+            }, 50);
         }
 
         function runValueIteration() {
@@ -640,33 +669,104 @@
             valBtn.innerText = "Computing...";
             valBtn.disabled = true;
 
-            fetch('/value_iteration', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                    n: currentN,
-                    start: start,
-                    end: end,
-                    obstacles: obstacles
-                })
-            })
-                .then(res => res.json())
-                .then(data => {
-                    valBtn.innerText = originalText;
-                    valBtn.disabled = false;
-                    document.getElementById('resultsTitle').innerText = "Optimal Policy (Value Iteration Results)";
-                    document.getElementById('resultsTitle').style.color = "#ec4899"; // Pink for VI
-                    renderMatrices(data.values, data.policy, data.path, data.all_paths);
-                    setTimeout(() => {
-                        document.getElementById('resultsArea').scrollIntoView({ behavior: 'smooth', block: 'end' });
-                    }, 100);
-                })
-                .catch(err => {
-                    console.error(err);
-                    showToast("Value Iteration failed. See console.");
-                    valBtn.innerText = originalText;
-                    valBtn.disabled = false;
-                });
+            setTimeout(() => {
+                const n = currentN;
+                const arrows = { 0: '↑', 1: '→', 2: '↓', 3: '←' };
+                let V = new Array(n * n).fill(0);
+                const gamma = 0.9;
+                const theta = 1e-4;
+
+                const terminals = end !== -1 ? [end] : [];
+                const obs_set = new Set(obstacles);
+
+                function getNextStateReward(s, a) {
+                    if (terminals.includes(s) || obs_set.has(s)) return [s, 0];
+                    let r = Math.floor(s / n), c = s % n;
+                    let nr = r, nc = c;
+                    if (a === 0) nr -= 1; else if (a === 1) nc += 1; else if (a === 2) nr += 1; else if (a === 3) nc -= 1;
+                    if (nr < 0 || nr >= n || nc < 0 || nc >= n) return [s, -1];
+                    let ns = nr * n + nc;
+                    if (obs_set.has(ns)) return [s, -1];
+                    if (terminals.includes(ns)) return [ns, 10];
+                    return [ns, -1];
+                }
+
+                while (true) {
+                    let delta = 0;
+                    let V_new = [...V];
+                    for (let s = 0; s < n * n; s++) {
+                        if (terminals.includes(s) || obs_set.has(s)) continue;
+                        let max_val = -Infinity;
+                        for (let a = 0; a < 4; a++) {
+                            let [ns, reward] = getNextStateReward(s, a);
+                            let val = reward + gamma * V[ns];
+                            if (val > max_val) max_val = val;
+                        }
+                        V_new[s] = max_val;
+                        delta = Math.max(delta, Math.abs(V[s] - V_new[s]));
+                    }
+                    V = V_new;
+                    if (delta < theta) break;
+                }
+
+                let policy = Array.from({ length: n * n }, () => []);
+                for (let s = 0; s < n * n; s++) {
+                    if (terminals.includes(s) || obs_set.has(s)) continue;
+                    let max_val = -Infinity;
+                    for (let a = 0; a < 4; a++) {
+                        let [ns, reward] = getNextStateReward(s, a);
+                        let val = reward + gamma * V[ns];
+                        if (val > max_val + 1e-6) {
+                            max_val = val;
+                            policy[s] = [a];
+                        } else if (Math.abs(val - max_val) <= 1e-6) {
+                            policy[s].push(a);
+                        }
+                    }
+                }
+
+                let policy_display = [];
+                for (let s = 0; s < n * n; s++) {
+                    if (obs_set.has(s)) policy_display.push('');
+                    else if (terminals.includes(s)) policy_display.push('★');
+                    else policy_display.push(policy[s].map(a => arrows[a]).join(''));
+                }
+
+                let path_nodes = new Set();
+                let all_paths_display = [];
+                if (start !== -1 && end !== -1) {
+                    let paths = [[start]];
+                    while (paths.length > 0) {
+                        let curr_path = paths.shift();
+                        let curr = curr_path[curr_path.length - 1];
+                        if (curr === end) {
+                            curr_path.forEach(node => path_nodes.add(node));
+                            let coordsPath = curr_path.map(s => `(${Math.floor(s / n)},${s % n})`);
+                            all_paths_display.push(coordsPath);
+                            continue;
+                        }
+                        for (let a of policy[curr]) {
+                            let [ns, _] = getNextStateReward(curr, a);
+                            if (ns !== curr && !curr_path.includes(ns)) {
+                                paths.push([...curr_path, ns]);
+                            }
+                        }
+                    }
+                }
+
+                let path = Array.from(path_nodes);
+                let values = V.map(v => Math.round(v * 100) / 100);
+
+                valBtn.innerText = originalText;
+                valBtn.disabled = false;
+                document.getElementById('resultsTitle').innerText = "Optimal Policy (Value Iteration Results)";
+                document.getElementById('resultsTitle').style.color = "#ec4899";
+                renderMatrices(values, policy_display, path, all_paths_display);
+
+                setTimeout(() => {
+                    document.getElementById('resultsArea').scrollIntoView({ behavior: 'smooth', block: 'end' });
+                }, 100);
+            }, 50);
         }
 
         function renderMatrices(values, policy, opPath = [], allPaths = []) {
